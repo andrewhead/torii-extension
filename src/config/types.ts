@@ -1,21 +1,17 @@
 import * as path from "path";
 import { FileContents, OutputType } from "santoku-store";
 
-/**
- *
- * Eventually the contents of this directory can be split out into its own module.
- */
 export interface Config {
   /**
    * List of output generators.
    */
-  outputEmitters: OutputEmitter[];
+  outputGenerators: OutputGenerator[];
 }
 
 /**
  * A command that generates outputs.
  */
-export interface OutputEmitter {
+export interface OutputGenerator {
   /**
    * A unique and descriptive name of the output this emitter produces.
    */

@@ -4,7 +4,7 @@ import { validate } from "../../src/config/validate";
  * Extend this for tests of optional properties.
  */
 const BASE_CONFIG = {
-  id: "command-id",
+  id: "generator-id",
   type: "console",
   command: "ls"
 };
@@ -27,7 +27,7 @@ describe("validate", () => {
     it("requires type", () => {
       expect(
         validate({
-          id: "command-id",
+          id: "generator-id",
           command: "ls"
         }).valid
       ).toBe(false);
@@ -36,7 +36,7 @@ describe("validate", () => {
     it("fails with invalid type", () => {
       expect(
         validate({
-          id: "command-id",
+          id: "generator-id",
           type: "invalid",
           command: "ls"
         }).valid
