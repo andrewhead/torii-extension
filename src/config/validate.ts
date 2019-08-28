@@ -6,7 +6,7 @@ import { OutputTypes } from "santoku-store";
  * functions. You will need to do runtime validation of callbacks.
  */
 export function validate(config: any) {
-  const schema = Joi.object().keys({
+  const outputGeneratorSchema = Joi.object().keys({
     id: Joi.string().required(),
     command: Joi.string().required(),
     type: Joi.string()
@@ -21,6 +21,11 @@ export function validate(config: any) {
       .strict()
       .integer()
       .positive()
+  });
+  const schema = Joi.object().keys({
+    outputGenerators: Joi.array()
+      .items(outputGeneratorSchema)
+      .required()
   });
   const { error } = schema.validate(config);
   return {

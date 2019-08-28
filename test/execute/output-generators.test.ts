@@ -21,7 +21,9 @@ describe("OutputGenerators", () => {
        */
       execute: jest.fn().mockReturnValue("mock-process"),
       cancel: jest.fn(),
-      stage: jest.fn()
+      stage: jest.fn().mockImplementation((_, callback) => {
+        callback("mock-staging-dir", null);
+      })
     };
   });
   const fileContents = {

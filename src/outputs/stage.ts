@@ -2,12 +2,9 @@ import * as fs from "fs";
 import * as path from "path";
 import { FileContents } from "santoku-store";
 import uuidv4 from "uuid/v4";
+import { StageCallback } from "./types";
 
-export function stage(
-  baseStagingDir: string,
-  fileContents: FileContents,
-  callback: (stageDir: string, err) => void
-) {
+export function stage(baseStagingDir: string, fileContents: FileContents, callback: StageCallback) {
   const newStagingDir = getNewStagingDir(baseStagingDir);
   Promise.all(
     Object.keys(fileContents).map(filePath => {

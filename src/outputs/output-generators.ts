@@ -1,12 +1,16 @@
-import { FileContents } from "santoku-store";
+import { ConsoleLog, FileContents } from "santoku-store";
 import { OutputGenerator } from "../config/types";
 import { execute, initOptions } from "./execute";
+import { stage } from "./stage";
 import {
+  CommandUpdate,
+  CommandUpdateListener,
   ExecutionOptions,
   GenerateOutputsOptions,
   JobId,
   Jobs,
-  OutputGeneratorsOptions
+  OutputGeneratorsOptions,
+  StageCallback
 } from "./types";
 
 /**
@@ -15,9 +19,10 @@ import {
 export class OutputGenerators {
   constructor(options: OutputGeneratorsOptions) {
     this._generators = options.configs;
+    this._stagePath = options.stagePath;
     this._executeFunction = options.execute || this.execute;
     this._cancelFunction = options.cancel || this._defaultCancel;
-    this._stageFunction = options.stage || this.stage;
+    this._stageFunction = options.stage || this._defaultStage;
   }
 
   /**
@@ -34,21 +39,75 @@ export class OutputGenerators {
     let runningJobId = null;
     for (const generator of this._generators) {
       if (generator.when === undefined || generator.when(fileContents)) {
-        const stagePath = this._stageFunction(fileContents);
-        const executionOptions = initOptions(generator, stagePath);
-        const process = this._executeFunction(executionOptions);
-        this._jobs[jobId].push(process);
-        runningJobId = jobId;
+        const stagePath = this._stageFunction(fileContents, (stageDir, _) => {
+          if (stageDir !== null) {
+            const executionOptions = initOptions(generator, stagePath);
+            executionOptions.onUpdate = this.onProcessUpdate.bind(this, jobId, generator);
+            executionOptions.onFinished = this.onProcessFinished.bind(this, jobId, generator);
+            const process = this._executeFunction(executionOptions);
+            this.reportProcessUpdate({
+              jobId: jobId,
+              commandId: generator.id,
+              state: "running",
+              type: generator.type
+            });
+            this._jobs[jobId].push(process);
+            runningJobId = jobId;
+          }
+        });
       }
     }
     return runningJobId;
+  }
+
+  /**
+   * Listen to command updates. To unsubscribe from updates, call the returned function.
+   */
+  subscribe(listener: CommandUpdateListener) {
+    this._listeners.push(listener);
+    return function() {
+      const index = this._listeners.indexOf(listener);
+      if (index !== -1) {
+        this._listeners.splice(index, 1);
+      }
+    };
+  }
+
+  reportProcessUpdate(update: CommandUpdate) {
+    for (const listener of this._listeners) {
+      listener(update);
+    }
+  }
+
+  onProcessUpdate(jobId: JobId, generator: OutputGenerator, log: ConsoleLog) {
+    this.reportProcessUpdate({
+      jobId,
+      commandId: generator.id,
+      state: "running",
+      log
+    });
+  }
+
+  onProcessFinished(jobId: JobId, generator: OutputGenerator, log: ConsoleLog) {
+    this.reportProcessUpdate({
+      jobId,
+      commandId: generator.id,
+      state: "finished",
+      log
+    });
   }
 
   execute(options: ExecutionOptions) {
     return execute(options);
   }
 
-  stage(fileContents: FileContents) {}
+  stage(fileContents: FileContents, callback: StageCallback) {
+    this._stageFunction(fileContents, callback);
+  }
+
+  _defaultStage(fileContents: FileContents, callback: StageCallback) {
+    stage(this._stagePath, fileContents, callback);
+  }
 
   /**
    * Cancel all output generation tasks associated with ID 'jobId'.
@@ -76,4 +135,6 @@ export class OutputGenerators {
   private _cancelFunction;
   private _stageFunction;
   private _jobs: Jobs = {};
+  private _stagePath: string;
+  private _listeners: CommandUpdateListener[] = [];
 }

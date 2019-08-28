@@ -13,9 +13,17 @@ export interface ExecutionOptions extends child_process.ExecOptions {
    */
   executeFunction?: typeof child_process.exec;
   /**
-   * String to run.
+   * Command to run.
    */
   command: string;
+  /**
+   * Callback invoked whenever new data has come in to stdout or stderr.
+   */
+  onUpdate?: (update: ConsoleLog) => {};
+  /**
+   * Callback invoked whenever execution has finished.
+   */
+  onFinished?: (update: ConsoleLog) => {};
 }
 
 export interface OutputGeneratorsOptions {
@@ -34,7 +42,7 @@ export interface OutputGeneratorsOptions {
    */
   execute?: typeof execute;
   cancel?: (jobId: JobId) => void;
-  stage?: (fileContents: FileContents) => void;
+  stage?: (fileContents: FileContents, callback: StageCallback) => void;
 }
 
 export interface GenerateOutputsOptions {
@@ -54,6 +62,12 @@ export interface GenerateOutputsOptions {
   callback?: (update: CommandUpdate) => {};
 }
 
+/**
+ * 'stageDir' is a new directory created to stage file contents. It's 'null' if there was an error in staging.
+ * 'err' An error from staging the file contents. It's 'null' if there was no error.
+ */
+export type StageCallback = (stageDir: string | null, err: any | null) => void;
+
 export type JobId = string;
 
 export interface CommandUpdate {
@@ -67,8 +81,13 @@ export interface CommandUpdate {
    * Will only be defined when the command has first started running.
    */
   type?: OutputType;
-  log: ConsoleLog;
+  /**
+   * Will not be defined when the command starts.
+   */
+  log?: ConsoleLog;
 }
+
+export type CommandUpdateListener = (update: CommandUpdate) => void;
 
 export interface Jobs {
   [jobId: string]: child_process.ChildProcess[];
