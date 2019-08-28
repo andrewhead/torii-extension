@@ -36,9 +36,10 @@ export function initOptions(generator: OutputGenerator, cwd?: string): child_pro
 
 export function execute(options: ExecutionOptions) {
   const executionFunction = options.executeFunction || child_process.exec;
-  executionFunction(options.command, options, (err, stdout, stderr) => {
+  return executionFunction(options.command, options, (err, stdout, stderr) => {
     console.log("err", err);
     console.log("Stdout", stdout);
     console.log("Stderr", stderr);
   });
+  // process.kill();
 }
