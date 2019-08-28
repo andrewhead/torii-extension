@@ -70,10 +70,6 @@ export class OutputGenerators {
     return execute(options);
   }
 
-  private _stage(fileContents: FileContents, callback: StageCallback) {
-    this._stageFunction(fileContents, callback);
-  }
-
   private _defaultStage(fileContents: FileContents, callback: StageCallback) {
     stage(this._stagePath, fileContents, callback);
   }

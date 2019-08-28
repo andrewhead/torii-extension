@@ -25,6 +25,7 @@ export function execute(options: ExecutionOptions) {
       options.onUpdate(log);
     }
   });
+  return process;
 }
 
 export function initOptions(generator: OutputGenerator, cwd?: string): ExecutionOptions {
