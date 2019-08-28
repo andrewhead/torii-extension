@@ -3,8 +3,6 @@ import { OutputGenerator } from "../config/types";
 import { execute, initOptions } from "./execute";
 import { stage } from "./stage";
 import {
-  CommandUpdate,
-  CommandUpdateListener,
   ExecutionOptions,
   GenerateOutputsOptions,
   JobId,
@@ -20,7 +18,7 @@ export class OutputGenerators {
   constructor(options: OutputGeneratorsOptions) {
     this._generators = options.configs;
     this._stagePath = options.stagePath;
-    this._executeFunction = options.execute || this.execute;
+    this._executeFunction = options.execute || this._execute;
     this._cancelFunction = options.cancel || this._defaultCancel;
     this._stageFunction = options.stage || this._defaultStage;
   }
@@ -32,25 +30,33 @@ export class OutputGenerators {
    */
   generateOutputs(options: GenerateOutputsOptions): JobId | null {
     const { jobId, fileContents } = options;
+    const callback =
+      options.callback ||
+      function() {
+        /* noop */
+      };
     if (this._jobs[jobId] !== undefined) {
       this._cancelFunction(jobId);
     }
     this._jobs[jobId] = [];
     let runningJobId = null;
     for (const generator of this._generators) {
-      if (generator.when === undefined || generator.when(fileContents)) {
+      const { id: commandId, when } = generator;
+      if (when === undefined || when(fileContents)) {
         const stagePath = this._stageFunction(fileContents, (stageDir, _) => {
           if (stageDir !== null) {
             const executionOptions = initOptions(generator, stagePath);
-            executionOptions.onUpdate = this.onProcessUpdate.bind(this, jobId, generator);
-            executionOptions.onFinished = this.onProcessFinished.bind(this, jobId, generator);
-            const process = this._executeFunction(executionOptions);
-            this.reportProcessUpdate({
-              jobId: jobId,
-              commandId: generator.id,
-              state: "running",
-              type: generator.type
+            Object.assign(executionOptions, {
+              onUpdate: (log: ConsoleLog) => {
+                callback({ jobId, commandId, log, state: "running" });
+              },
+              onFinished: (log: ConsoleLog) => {
+                callback({ jobId, commandId, log, state: "finished" });
+              }
             });
+
+            const process = this._executeFunction(executionOptions);
+            callback({ jobId, commandId, state: "running", type: generator.type });
             this._jobs[jobId].push(process);
             runningJobId = jobId;
           }
@@ -60,52 +66,15 @@ export class OutputGenerators {
     return runningJobId;
   }
 
-  /**
-   * Listen to command updates. To unsubscribe from updates, call the returned function.
-   */
-  subscribe(listener: CommandUpdateListener) {
-    this._listeners.push(listener);
-    return function() {
-      const index = this._listeners.indexOf(listener);
-      if (index !== -1) {
-        this._listeners.splice(index, 1);
-      }
-    };
-  }
-
-  reportProcessUpdate(update: CommandUpdate) {
-    for (const listener of this._listeners) {
-      listener(update);
-    }
-  }
-
-  onProcessUpdate(jobId: JobId, generator: OutputGenerator, log: ConsoleLog) {
-    this.reportProcessUpdate({
-      jobId,
-      commandId: generator.id,
-      state: "running",
-      log
-    });
-  }
-
-  onProcessFinished(jobId: JobId, generator: OutputGenerator, log: ConsoleLog) {
-    this.reportProcessUpdate({
-      jobId,
-      commandId: generator.id,
-      state: "finished",
-      log
-    });
-  }
-
-  execute(options: ExecutionOptions) {
+  private _execute(options: ExecutionOptions) {
     return execute(options);
   }
 
-  stage(fileContents: FileContents, callback: StageCallback) {
+  private _stage(fileContents: FileContents, callback: StageCallback) {
     this._stageFunction(fileContents, callback);
   }
 
-  _defaultStage(fileContents: FileContents, callback: StageCallback) {
+  private _defaultStage(fileContents: FileContents, callback: StageCallback) {
     stage(this._stagePath, fileContents, callback);
   }
 
@@ -118,7 +87,7 @@ export class OutputGenerators {
     return result;
   }
 
-  _defaultCancel(jobId: JobId) {
+  private _defaultCancel(jobId: JobId) {
     if (this._jobs[jobId] !== undefined) {
       for (const process of this._jobs[jobId]) {
         process.kill();
@@ -136,5 +105,4 @@ export class OutputGenerators {
   private _stageFunction;
   private _jobs: Jobs = {};
   private _stagePath: string;
-  private _listeners: CommandUpdateListener[] = [];
 }

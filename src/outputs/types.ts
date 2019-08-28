@@ -19,11 +19,11 @@ export interface ExecutionOptions extends child_process.ExecOptions {
   /**
    * Callback invoked whenever new data has come in to stdout or stderr.
    */
-  onUpdate?: (update: ConsoleLog) => {};
+  onUpdate?: (log: ConsoleLog) => void;
   /**
    * Callback invoked whenever execution has finished.
    */
-  onFinished?: (update: ConsoleLog) => {};
+  onFinished?: (log: ConsoleLog) => void;
 }
 
 export interface OutputGeneratorsOptions {
@@ -59,7 +59,7 @@ export interface GenerateOutputsOptions {
    * Optional callback that will be called when execution starts, sometimes when the command has
    * been running for some time and has updates from the console, and when execution finishes.
    */
-  callback?: (update: CommandUpdate) => {};
+  callback?: CommandUpdateListener;
 }
 
 /**
