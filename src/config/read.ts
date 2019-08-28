@@ -1,5 +1,4 @@
 import * as path from "path";
-import { Config } from "./types";
 import { validate } from "./validate";
 
 export const CONFIG_NAME = "tory.js";
@@ -8,11 +7,7 @@ export const CONFIG_NAME = "tory.js";
  * Load in the configuration file for the project. The configuration, and any errors, will be
  * passed as arguments to 'callback'.
  */
-export function readConfig(
-  workspaceDir: string,
-  callback: (config: Config | null, err) => void,
-  configName = CONFIG_NAME
-) {
+export function readConfig(workspaceDir: string, configName = CONFIG_NAME) {
   const relativeConfigPath = path.relative(__dirname, path.join(workspaceDir, configName));
   try {
     /*
@@ -24,8 +19,8 @@ export function readConfig(
     }
     const config = require(relativeConfigPath);
     const { error } = validate(config);
-    callback(config, error);
+    return { config, error };
   } catch (error) {
-    callback(null, error);
+    return { config: null, error };
   }
 }
