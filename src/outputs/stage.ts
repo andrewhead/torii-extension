@@ -1,4 +1,5 @@
 import * as fs from "fs";
+import { mkdirp } from "fs-extra";
 import * as path from "path";
 import { FileContents } from "santoku-store";
 import uuidv4 from "uuid/v4";
@@ -31,17 +32,23 @@ function writeFile(stagingDir: string, filePath: string, contents: string): Prom
   const writePath = path.join(stagingDir, filePath);
   return new Promise((resolve, reject) => {
     const writeDir = path.dirname(writePath);
-    fs.mkdir(writeDir, { recursive: true }, err => {
-      if (errDefined(err)) {
+    /*
+     * 'mkdirp' is used here instead of the Node.js 'fs.mkdir' command because for some reason,
+     * 'fs.mkdir' with the 'recursive: true' option doesn't work when this code is running from
+     * a VSCode extension.
+     */
+    mkdirp(writeDir)
+      .then(() => {
+        fs.writeFile(writePath, contents, err => {
+          if (errDefined(err)) {
+            reject(err);
+          }
+          resolve(filePath);
+        });
+      })
+      .catch(err => {
         reject(err);
-      }
-      fs.writeFile(writePath, contents, err => {
-        if (errDefined(err)) {
-          reject(err);
-        }
-        resolve(filePath);
       });
-    });
   });
 }
 

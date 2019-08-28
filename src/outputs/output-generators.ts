@@ -43,9 +43,9 @@ export class OutputGenerators {
     for (const generator of this._generators) {
       const { id: commandId, when } = generator;
       if (when === undefined || when(fileContents)) {
-        const stagePath = this._stageFunction(fileContents, (stageDir, _) => {
+        this._stageFunction(fileContents, (stageDir, _) => {
           if (stageDir !== null) {
-            const executionOptions = initOptions(generator, stagePath);
+            const executionOptions = initOptions(generator, stageDir);
             Object.assign(executionOptions, {
               onUpdate: (log: ConsoleLog) => {
                 callback({ jobId, commandId, log, state: "running" });
@@ -56,7 +56,7 @@ export class OutputGenerators {
             });
 
             const process = this._executeFunction(executionOptions);
-            callback({ jobId, commandId, state: "running", type: generator.type });
+            callback({ jobId, commandId, state: "started", type: generator.type });
             this._jobs[jobId].push(process);
             runningJobId = jobId;
           }

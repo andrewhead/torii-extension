@@ -70,21 +70,25 @@ export type StageCallback = (stageDir: string | null, err: any | null) => void;
 
 export type JobId = string;
 
-export interface CommandUpdate {
+export type CommandUpdate = CommandStartedUpdate | CommandLogUpdate;
+
+interface BaseCommandUpdate {
   jobId: JobId;
   commandId: CommandId;
   /**
    * Can be used to keep track of the progress of the command's execution.
    */
   state: CommandState;
-  /**
-   * Will only be defined when the command has first started running.
-   */
-  type?: OutputType;
-  /**
-   * Will not be defined when the command starts.
-   */
-  log?: ConsoleLog;
+}
+
+export interface CommandStartedUpdate extends BaseCommandUpdate {
+  state: "started";
+  type: OutputType;
+}
+
+export interface CommandLogUpdate extends BaseCommandUpdate {
+  state: "running" | "finished";
+  log: ConsoleLog;
 }
 
 export type CommandUpdateListener = (update: CommandUpdate) => void;
