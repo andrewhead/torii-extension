@@ -1,5 +1,5 @@
 import { OutputType } from "santoku-store";
-import { initOptions } from "../../src/execute/execute";
+import { initOptions } from "../../src/outputs/execute";
 
 describe("initOptions", () => {
   const BASE_CONFIG = {
