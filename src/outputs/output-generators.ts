@@ -86,7 +86,7 @@ export class OutputGenerators {
   private _defaultCancel(jobId: JobId) {
     if (this._jobs[jobId] !== undefined) {
       for (const process of this._jobs[jobId]) {
-        process.kill();
+        process.kill("SIGKILL");
       }
     }
   }

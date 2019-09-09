@@ -8,22 +8,24 @@ import { ExecutionOptions } from "./types";
 export function execute(options: ExecutionOptions) {
   const executionFunction = options.executeFunction || child_process.exec;
   const log = { contents: "", stdoutRanges: [], stderrRanges: [] };
+  const throttledUpdate = _.throttle(() => {
+    if (options.onUpdate !== undefined) {
+      options.onUpdate(log);
+    }
+  }, 500);
   const process = executionFunction(options.command, options, (_, __, ___) => {
     if (options.onFinished) {
+      throttledUpdate.cancel();
       options.onFinished(log);
     }
   });
   process.stdout.on("data", chunk => {
     updateLog(log, chunk, "stdout");
-    if (options.onUpdate) {
-      options.onUpdate(log);
-    }
+    throttledUpdate();
   });
   process.stderr.on("data", chunk => {
     updateLog(log, chunk, "stderr");
-    if (options.onUpdate) {
-      options.onUpdate(log);
-    }
+    throttledUpdate();
   });
   return process;
 }
