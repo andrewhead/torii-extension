@@ -1,6 +1,6 @@
 import * as child_process from "child_process";
 import { CommandState, ConsoleLog, FileContents } from "santoku-store";
-import { CommandId, OutputType } from "santoku-store/dist/outputs/types";
+import { CommandId, OutputType } from "santoku-store";
 import { OutputGenerator } from "../config/types";
 import { execute } from "./execute";
 
