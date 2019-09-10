@@ -1,7 +1,7 @@
 import * as path from "path";
 import { validate } from "./validate";
 
-export const CONFIG_NAME = "tory.js";
+export const CONFIG_NAME = "torii.js";
 
 /**
  * Load in the configuration file for the project. The configuration, and any errors, will be
